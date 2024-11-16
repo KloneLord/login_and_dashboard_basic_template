@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    .navbar { display: flex; justify-content: space-between; padding: 1em; background: #007bff; color: #fff; }
+    .menu a { margin-right: 10px; color: #fff; text-decoration: none; }
+    .welcome, .clock, .timer { margin: 20px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+<div class="navbar">
+  <div class="menu">
+    <a href="/page1">Page 1</a>
+    <a href="/page2">Page 2</a>
+    <a href="/page3">Page 3</a>
+    <a href="/page4">Page 4</a>
+    <a href="/page5">Page 5</a>
+    <a href="/page6">Page 6</a>
+    <a href="/page7">Page 7</a>
+    <a href="/page8">Page 8</a>
+    <a href="/page9">Page 9</a>
+  </div>
+  <button id="logoutButton">Logout</button>
+</div>
+<div id="welcomeMessage" class="welcome"></div>
+<div id="clock" class="clock"></div>
+<div id="loginTimer" class="timer"></div>
+<script>
+  const loadDashboard = async () => {
+    try {
+      const response = await fetch('/dashboard', {
+        method: 'GET',
+      });
+
+      if (response.ok) {
+        console.log('Dashboard loaded successfully');
+      } else {
+        console.log('Unauthorized. Redirecting to login...');
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+      window.location.href = '/login';
+    }
+  };
+
+  loadDashboard();
+</script>
+
+
+<script>
+  document.getElementById('logoutButton').addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/sessions/logout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        console.log('Logout successful');
+        window.location.href = '/login'; // Redirect to login page
+      } else {
+        alert('Error during logout');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded, calling fetchPage1Data...');
+    fetchPage1Data();
+  });
+</script>
+
+
+</body>
+</html>

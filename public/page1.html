@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page 1</title>
+    <style>
+        /* Modal styles */
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 30%;
+            border-radius: 5px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .modal-content button {
+            margin: 5px;
+        }
+
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        td {
+            background-color: #fff;
+        }
+        tr:nth-child(even) td {
+            background-color: #f9f9f9;
+        }
+        tr:hover td {
+            background-color: #f1f1f1;
+        }
+
+        /* Add spacing and styling for form */
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input, select, button {
+            margin-right: 10px;
+            padding: 5px;
+            font-size: 14px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #clearForm {
+            background-color: #6c757d;
+        }
+        #clearForm:hover {
+            background-color: #5a6268;
+        }
+
+        h1, h3 {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+<h1>Welcome to Page 1</h1>
+
+<h3>Add a New Entry</h3>
+<form id="addForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" required>
+    <label for="age">Age:</label>
+    <input type="number" id="age" required>
+    <label for="team">Favorite Football Team:</label>
+    <select id="team">
+        <option value="Collingwood">Collingwood</option>
+        <option value="Carlton">Carlton</option>
+        <option value="Essondon">Essondon</option>
+        <option value="Footscray">Footscray</option>
+        <option value="Richmond">Richmond</option>
+    </select>
+    <button type="submit">Add</button>
+    <button type="button" id="clearForm">Clear</button>
+</form>
+
+<h3>Entries</h3>
+<table id="dataTable">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Favorite Football Team</th>
+        <th>Username</th>
+        <th>Entry Date</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Table rows will be dynamically populated -->
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = '/api/page1';
+    const tableBody = document.getElementById('dataTable').querySelector('tbody');
+    const form = document.getElementById('addForm');
+    let entries = [];
+    let editId = null;
+
+    // Fetch entries from the server
+    async function fetchEntries() {
+        console.log('Fetching entries from the server...');
+        const response = await fetch(apiUrl, { method: 'GET' });
+        entries = await response.json();
+        console.log('Entries fetched:', entries);
+        populateTable();
+    }
+
+    // Populate table with entries
+    function populateTable() {
+        console.log('Populating table with entries...');
+        tableBody.innerHTML = '';
+        entries.forEach((entry) => {
+            console.log('Adding entry to table:', entry);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                    <td>${entry.name}</td>
+                    <td>${entry.age}</td>
+                    <td>${entry.team}</td>
+                    <td>${entry.username}</td>
+                    <td>${new Date(entry.entryDate).toLocaleString()}</td>
+                    <td>
+                        <button onclick="openEditModal('${entry._id}')">Edit</button>
+                        <button onclick="deleteEntry('${entry._id}')">Del</button>
+                    </td>
+                `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Add a new entry
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const age = document.getElementById('age').value;
+        const team = document.getElementById('team').value;
+
+        console.log('Adding new entry:', { name, age, team });
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, age, team }),
+        });
+
+        if (response.ok) {
+            console.log('New entry added successfully.');
+            await fetchEntries();
+            form.reset();
+        } else {
+            console.error('Failed to add entry:', response.statusText);
+        }
+    });
+
+    // Delete an entry
+    async function deleteEntry(id) {
+        console.log(`Deleting entry with ID: ${id}`);
+        const response = await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+
+        if (response.ok) {
+            console.log(`Entry with ID: ${id} deleted successfully.`);
+            await fetchEntries();
+        } else {
+            console.error(`Failed to delete entry with ID: ${id}`, response.statusText);
+        }
+    }
+
+    fetchEntries();
+
+    // Modal Reference
+    const modal = document.getElementById('modal');
+
+    // Open the edit modal
+    function openEditModal(id) {
+        console.log(`Opening edit modal for entry with ID: ${id}`);
+        editId = id; // Store the ID of the entry being edited
+
+        const entry = entries.find((entry) => entry._id === id);
+        console.log('Entry details to edit:', entry);
+
+        if (entry) {
+            // Dynamically inject modal content
+            modal.querySelector('.modal-content').innerHTML = `
+            <h3>Edit Entry</h3>
+            <label for="editName">Name:</label>
+            <input type="text" id="editName" value="${entry.name}" required>
+            <label for="editAge">Age:</label>
+            <input type="number" id="editAge" value="${entry.age}" required>
+            <label for="editTeam">Favorite Football Team:</label>
+            <select id="editTeam">
+                <option value="Collingwood" ${entry.team === 'Collingwood' ? 'selected' : ''}>Collingwood</option>
+                <option value="Carlton" ${entry.team === 'Carlton' ? 'selected' : ''}>Carlton</option>
+                <option value="Essondon" ${entry.team === 'Essondon' ? 'selected' : ''}>Essondon</option>
+                <option value="Footscray" ${entry.team === 'Footscray' ? 'selected' : ''}>Footscray</option>
+                <option value="Richmond" ${entry.team === 'Richmond' ? 'selected' : ''}>Richmond</option>
+            </select>
+            <button onclick="saveEdit()">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        `;
+            modal.style.display = 'block'; // Show the modal
+        } else {
+            console.error('Entry not found for editing.');
+        }
+    }
+
+    // Save edited entry
+    async function saveEdit() {
+        console.log(`Saving edits for entry with ID: ${editId}`);
+
+        const name = document.getElementById('editName').value;
+        const age = document.getElementById('editAge').value;
+        const team = document.getElementById('editTeam').value;
+
+        console.log('Updated entry details:', { name, age, team });
+
+        const response = await fetch(`${apiUrl}/${editId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, age, team }),
+        });
+
+        if (response.ok) {
+            console.log(`Entry with ID: ${editId} updated successfully.`);
+            await fetchEntries(); // Refresh the table
+            closeModal(); // Close the modal
+        } else {
+            console.error(`Failed to update entry with ID: ${editId}`, response.statusText);
+        }
+    }
+
+    // Close the modal
+    function closeModal() {
+        console.log('Closing modal');
+        modal.style.display = 'none';
+        modal.querySelector('.modal-content').innerHTML = ''; // Clear modal content
+    }
+
+</script>
+</body>
+</html>
